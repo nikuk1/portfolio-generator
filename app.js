@@ -1,64 +1,58 @@
-const fs = require('fs');
-const generatePage = require('./src/page-template');
-
 const inquirer = require('inquirer');
+// const generateSite = require('./utils/generate-site.js');
+// destructure this as follows
+const { writeFile, copyFile } = require('./utils/generate-site.js');
+const generatePage = require('./src/page-template.js');
 
-const promptUser = () => {
+const promptUser = () => {  
     return inquirer.prompt([
-{
-    type: 'input',
-    name: 'name',
-    message: 'What is your name? (Required)',
-    validate: nameInput => {
-        if (nameInput) {
-        return true;
-        } else {
-        console.log('Please enter your name!');
-        return false;
+      {
+        type: 'input',
+        name: 'name',
+        message: 'What is your name?',
+        validate: nameInput => {
+          if (nameInput) {
+            return true;
+          } else {
+            console.log("please enter your name!");
+            return false;
+          }
         }
-    }
-    },
-    {
-    type: 'input',
-    name: 'github',
-    message: 'Enter your GitHub Username',
-    validate: nameInput => {
-        if (nameInput) {
-        return true;
-        } else {
-        console.log('Please enter your GitHub Username!');
-        return false;
+      },
+      {
+        type: 'input',
+        name: 'github',
+        message: 'Enter your GitHub Username:',
+        validate: nameInput => {
+          if (nameInput) {
+            return true;
+          } else {
+            console.log("please enter your username!");
+            return false;
+          }
         }
-    }
-    },
-    {
+      },
+      {
         type: 'confirm',
         name: 'confirmAbout',
-        message: 'Would you like to enter some information about yourself for an "About" section?',
+        massage: 'Would you like to enter some information about yourself for an "About" section?',
         default: true
       },
       {
         type: 'input',
         name: 'about',
         message: 'Provide some information about yourself:',
-        when: ({ confirmAbout }) => {
-          if (confirmAbout) {
-            return true;
-          } else {
-            return false;
-          }
-        }
+        when: ({ confirmAbout }) => confirmAbout
       }
     ]);
 };
 
-  const promptProject = portfolioData => {
-
-    // If there's no 'projects' array property, create one
-    if (!portfolioData.projects) {
-        portfolioData.projects = [];
-    }
-    
+const promptProject = portfolioData => {
+  // If there;s no 'projects' array property, create one
+  if (!portfolioData.projects) {
+    portfolioData.projects = [];
+  }
+  
     console.log(`
   =================
   Add a New Project
@@ -73,18 +67,34 @@ const promptUser = () => {
       {
         type: 'input',
         name: 'description',
-        message: 'Provide a description of the project (Required)'
+        message: 'Provide a description of the project (Required)',
+        validate: nameInput => {
+          if (nameInput) {
+            return true;
+          } else {
+            console.log("please enter a description!");
+            return false;
+          }
+        }
       },
       {
         type: 'checkbox',
         name: 'languages',
-        message: 'What did you build this project with? (Check all that apply)',
+        message: 'What did you this project with? (Check all that apply)',
         choices: ['JavaScript', 'HTML', 'CSS', 'ES6', 'jQuery', 'Bootstrap', 'Node']
       },
       {
         type: 'input',
         name: 'link',
-        message: 'Enter the GitHub link to your project. (Required)'
+        message: 'Enter the GitHub link to your project. (Required)',
+        validate: nameInput => {
+          if (nameInput) {
+            return true;
+          } else {
+            console.log("please enter your GitHub link!");
+            return false;
+          }
+        }
       },
       {
         type: 'confirm',
@@ -98,52 +108,47 @@ const promptUser = () => {
         message: 'Would you like to enter another project?',
         default: false
       }
-    ]);
+    ]).then(projectData => {
+      portfolioData.projects.push(projectData);
+      if (projectData.confirmAddProject) {
+        return promptProject(portfolioData);
+      } else {
+        return portfolioData;
+      }
+    });
   };
 
-  //chain both function calls together
-  promptUser()
-  .then(promptProject)
-  .then(portfolioData => {
-   const pageHTML = generatePage();
+promptUser()
+    .then(promptProject)
+    .then(portfolioData => {
+      return generatePage(portfolioData);
+    })
+    .then(pageHTML => {
+      return writeFile(pageHTML);
+    })
+    .then(writeFileResponse => {
+      console.log(writeFileResponse);
+      return copyFile();
+    })
+    .then(copyFileResponse => {
+      console.log(copyFileResponse);
+    })
+    .catch(err => {
+      console.log(err);
+    });
 
-    // fs.writeFile('./index.html', pageHTML, err => {
-    //   if (err) throw new Error(err);
+    
+    // .then(projectAnswers => console.log(projectAnswers));    
 
-    // });
-  });
+// This is just a reference for one way to get user input from the command prompt
+// const profileDataArgs = process.argv.slice(2, process.argv.length);
 
+// const [name, github] = profileDataArgs;
 
+// const pageHTML = generatePage(portfolioData);
 
-// const pageHTML = generatePage(name, github);
+// fs.writeFile('index.html', generatePage(name, github), err => {
+//     if (err) throw err;
 
-// fs.writeFile('./index.html', pageHTML, err => {
-//   if (err) throw err;
-
-//   console.log('Portfolio complete! Check out index.html to see the output!');
+//     console.log('Portfolio Complete! Check out index.html to see the output!');
 // });
-
-
-
-// //Notice the lack of parentheses around the `profileDataArr` parameter?
-// const printProfileData = profileDataArr => {
-//     // This...
-//     for (let i = 0; i < profileDataArr.length; i += 1) {
-//       console.log(profileDataArr[i]);
-//     }
-  
-//     console.log('================');
-  
-//     //Is the same as this...
-//     profileDataArr.forEach((profileItem) => {
-//       console.log(profileItem)
-//     });
-//   };
-  
-//   printProfileData(profileDataArgs);
-
-// hard-wiring the text into the terminal output:
-// const generatePage = () => 'Name: Jane, Github: janehub';
-
-// // interpolated the text using variables passed into the function that created the output
-// const generatePage = (userName, githubName) => `Name: ${userName}, Github: ${githubName}`;
